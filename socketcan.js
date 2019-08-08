@@ -213,6 +213,9 @@ function Message(desc)
 	 */
 	this.muxed = desc.muxed;
 
+  // holds message raw bytes
+  this.data = (desc.length > 0 && desc.length < 8) ? Buffer.alloc(desc.length) : Buffer.alloc(8)
+
 	/**
          * Named array of signals within this message. Accessible via index and name.
          * @attribute {Signal} signals
@@ -282,6 +285,9 @@ DatabaseService.prototype.onMessage = function (msg) {
 	// this is the possible multiplexor for the signals coming in.
 	var b1mux = _signals.decode_signal(msg.data, 0, 8, true, false);
 
+  // set the data
+  msg.data.copy(this.messages[id].data)
+
 	// Let the C-Portition extract and convert the signal
 	for (i in m.signals) {
 		var s = m.signals[i];
@@ -319,6 +325,26 @@ DatabaseService.prototype.onMessage = function (msg) {
 DatabaseService.prototype.send = function (msg_name) {
 	var args = msg_name.split("."); // allow for mux'ed messages sent.
 
+  this.prepare(msg_name)
+
+	var m = this.messages[args[0]];
+
+	if (!m)
+		throw msg_name + " not defined";
+
+	var canmsg = {
+		id: m.id,
+		ext: m.ext,
+		rtr: false,
+		data : m.data
+	};
+
+	this.channel.send(canmsg);
+}
+
+DatabaseService.prototype.prepare = function (msg_name) {
+	var args = msg_name.split("."); // allow for mux'ed messages sent.
+
 	var m = this.messages[args[0]];
 	var mux = (args.length > 1) ? args[1] : undefined;
 
@@ -333,7 +359,6 @@ DatabaseService.prototype.send = function (msg_name) {
 	};
 
 	canmsg.data.fill(0); // should be 0xFF for j1939 message def.
-
 
 	if (mux) {
 		_signals.encode_signal(canmsg.data, 0, 8, true, false,
@@ -376,7 +401,8 @@ DatabaseService.prototype.send = function (msg_name) {
       s.endianess == 'little', s.type == 'signed', word1, word2 );
 	}
 
-	this.channel.send(canmsg);
+  // set the data
+  canmsg.data.copy(this.messages[args[0]].data)
 }
 
 /**
