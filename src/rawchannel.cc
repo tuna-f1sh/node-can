@@ -47,7 +47,7 @@ using namespace v8;
 
 #define CHECK_CONDITION(expr, str) if(!(expr)) return Nan::ThrowError(str);
 
-#define MAX_FRAMES_PER_ASYNC_EVENT 10
+#define MAX_FRAMES_PER_ASYNC_EVENT 1
 
 #define likely(x)   __builtin_expect( x , 1)
 #define unlikely(x) __builtin_expect( x , 0)
