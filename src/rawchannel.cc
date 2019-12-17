@@ -26,6 +26,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <string.h>
+#include <sys/fcntl.h>
 
 #include <pthread.h>
 
@@ -108,6 +109,7 @@ private:
     m_SocketFd = socket(PF_CAN, SOCK_RAW, protocol);
     m_ThreadStopRequested = false;
     m_TimestampsSupported = timestamps;
+    int flags = fcntl(m_SocketFd, F_GETFL);
 
     if (m_SocketFd > 0)
     {
@@ -117,6 +119,9 @@ private:
       memset(&ifr, 0, sizeof(ifr));
       strncpy(ifr.ifr_name, name, IFNAMSIZ - 1);
       if (ioctl(m_SocketFd, SIOCGIFINDEX, &ifr) != 0)
+        goto on_error;
+
+      if (fcntl(m_SocketFd, F_SETFL, flags | O_NONBLOCK) != 0)
         goto on_error;
 
       err_mask = CAN_ERR_MASK;
