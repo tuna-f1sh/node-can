@@ -323,12 +323,13 @@ DatabaseService.prototype.onMessage = function (msg) {
  * the rules. Finally send the message to the bus.
  * @method send
  * @param msg_name Name of the message to generate
+ * @param raw Don't use signals, send raw data buffer
  * @for DatabaseService
  */
-DatabaseService.prototype.send = function (msg_name) {
+DatabaseService.prototype.send = function (msg_name, raw = false) {
 	var args = msg_name.split("."); // allow for mux'ed messages sent.
 
-  this.prepare(msg_name)
+  if (!raw) this.prepare(msg_name)
 
 	var m = this.messages[args[0]];
 
